@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -31,22 +31,24 @@
 from datetime import datetime
 from typing import Any, Dict
 
-from core.api.v1.serializers import ProjectSerializer
-from core.models import Project
-from core.services.attachments import AttachmentService
-from core.services.projects import ProjectService
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
-from tests_description.models import TestCase, TestCaseStep, TestSuite
-from tests_description.selectors.cases import TestCaseSelector
-from tests_description.services.cases import TestCaseService
-from tests_description.services.suites import TestSuiteService
-from tests_representation.models import Parameter, Test, TestPlan, TestResult, TestStepResult
-from tests_representation.services.parameters import ParameterService
-from tests_representation.services.results import TestResultService
-from tests_representation.services.testplans import TestPlanService
-from tests_representation.services.tests import TestService
+from testy.core.models import Project
+from testy.core.services.attachments import AttachmentService
+from testy.core.services.projects import ProjectService
+from testy.tests_description.models import TestCase, TestCaseStep, TestSuite
+from testy.tests_description.selectors.cases import TestCaseSelector
+from testy.tests_description.services.cases import TestCaseService
+from testy.tests_description.services.suites import TestSuiteService
+from testy.tests_representation.models import (Parameter, Test, TestPlan,
+                                               TestResult, TestStepResult)
+from testy.tests_representation.services.parameters import ParameterService
+from testy.tests_representation.services.results import TestResultService
+from testy.tests_representation.services.testplans import TestPlanService
+from testy.tests_representation.services.tests import TestService
+
+from testrail_migrator.serializers import ProjectSerializer
 
 UserModel = get_user_model()
 

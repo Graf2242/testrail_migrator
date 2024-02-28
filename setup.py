@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -32,7 +32,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='testrail-migrator',
-    version='0.1',
+    version='0.1.3',
     description='Plugin to migrate your data from testrail',
     install_requires=[
         'tqdm==4.64.1',
@@ -43,4 +43,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
+    entry_points={'testy': ['testrail-migrator = testrail_migrator']},
+    py_modules=['testrail_migrator'],
 )

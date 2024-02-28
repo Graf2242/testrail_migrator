@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -39,8 +39,8 @@ from aiohttp import ClientConnectionError, ContentTypeError
 from asgiref.sync import async_to_sync
 from tqdm.asyncio import tqdm
 
-from .config import TestrailConfig
-from .utils import split_list_by_chunks
+from testrail_migrator.migrator_lib.config import TestrailConfig
+from testrail_migrator.migrator_lib.utils import split_list_by_chunks
 
 
 class InstanceType(Enum):

@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -37,19 +37,21 @@ from typing import Dict
 import redis
 from asgiref.sync import async_to_sync
 from celery import shared_task
-from core.models import Project
 from django.conf import settings
 from django.db import transaction
-from testrail_migrator.migrator_lib import TestRailClient, TestrailConfig, TestyCreator
+from testy.core.models import Project
+from testy.tests_description.models import TestCase, TestCaseStep
+from testy.tests_representation.models import TestResult
+from testy.tests_representation.services.results import TestResultService
+from testy.utils import ProgressRecorderContext
+
+from testrail_migrator.migrator_lib import (TestRailClient, TestrailConfig,
+                                            TestyCreator)
 from testrail_migrator.migrator_lib.migrator_service import MigratorService
 from testrail_migrator.migrator_lib.testrail import InstanceType
 from testrail_migrator.migrator_lib.testy import ParentType
+from testrail_migrator.migrator_lib.utils import suppress_auto_now
 from testrail_migrator.models import TestrailBackup
-from tests_description.models import TestCase, TestCaseStep
-from tests_representation.models import TestResult
-from tests_representation.services.results import TestResultService
-
-from utils import ProgressRecorderContext
 
 
 def get_fake_mapping_for_steps(case_mappings):
@@ -187,14 +189,15 @@ def upload_task(self, backup_name, config_dict, upload_root_runs: bool, service_
 
         for mapping_key, model_class, update_method, field_list in mappings_keys:
             with progress_recorder.progress_context(f'Looking for attachments in fields of {mapping_key}'):
-                creator.update_testy_attachment_urls_async(
-                    mappings[mapping_key],
-                    model_class,
-                    update_method,
-                    field_list,
-                    config_dict,
-                    mappings['attachments']
-                )
+                with suppress_auto_now(model_class, ['created_at', 'updated_at']):
+                    creator.update_testy_attachment_urls_async(
+                        mappings[mapping_key],
+                        model_class,
+                        update_method,
+                        field_list,
+                        config_dict,
+                        mappings['attachments']
+                    )
 
 
 @shared_task(bind=True)

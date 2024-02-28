@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -41,22 +41,25 @@ from typing import Dict, List
 
 import pytz
 from asgiref.sync import async_to_sync, sync_to_async
-from core.models import Attachment, Project
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.utils import timezone
+from testy.core.models import Attachment, Project
+from testy.tests_description.models import TestCase, TestCaseStep, TestSuite
+from testy.tests_representation.models import (Parameter, Test, TestPlan,
+                                               TestResult)
+from testy.tests_representation.services.tests import TestService
+from tqdm.asyncio import tqdm
+
 from testrail_migrator.migrator_lib import TestrailConfig
 from testrail_migrator.migrator_lib.migrator_service import MigratorService
-from testrail_migrator.migrator_lib.testrail import InstanceType, TestRailClient
-from testrail_migrator.migrator_lib.utils import split_list_by_chunks, suppress_auto_now
-from testrail_migrator.serializers import TestSerializer
-from tests_description.api.v1.serializers import TestSuiteSerializer
-from tests_description.models import TestCase, TestCaseStep, TestSuite
-from tests_representation.api.v1.serializers import TestPlanInputSerializer
-from tests_representation.models import Parameter, Test, TestPlan, TestResult
-from tests_representation.services.tests import TestService
-from tqdm.asyncio import tqdm
+from testrail_migrator.migrator_lib.testrail import (InstanceType,
+                                                     TestRailClient)
+from testrail_migrator.migrator_lib.utils import (split_list_by_chunks,
+                                                  suppress_auto_now)
+from testrail_migrator.serializers import (TestPlanInputSerializer,
+                                           TestSerializer, TestSuiteSerializer)
 
 UserModel = get_user_model()
 

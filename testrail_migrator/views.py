@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -33,27 +33,15 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from .forms import (
-    MigratorMilestoneDownloadForm,
-    MigratorMilestoneUploadForm,
-    MigratorPlanRunDownloadForm,
-    MigratorPlanRunUploadForm,
-    MigratorProjectDownloadForm,
-    MigratorProjectUploadForm,
-    MigratorSuiteDownloadForm,
-    MigratorSuiteUploadForm,
-    TestrailSettingsForm,
-)
+from .forms import (MigratorMilestoneDownloadForm, MigratorMilestoneUploadForm,
+                    MigratorPlanRunDownloadForm, MigratorPlanRunUploadForm,
+                    MigratorProjectDownloadForm, MigratorProjectUploadForm,
+                    MigratorSuiteDownloadForm, MigratorSuiteUploadForm,
+                    TestrailSettingsForm)
 from .models import TestrailBackup, TestrailSettings
-from .tasks import (
-    download_milestone_task,
-    download_plans_runs_task,
-    download_suites_task,
-    download_task,
-    upload_plans_runs_task,
-    upload_suites_task,
-    upload_task,
-)
+from .tasks import (download_milestone_task, download_plans_runs_task,
+                    download_suites_task, download_task,
+                    upload_plans_runs_task, upload_suites_task, upload_task)
 
 UserModel = get_user_model()
 

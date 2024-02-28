@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -28,16 +28,19 @@
 # if any, to sign a "copyright disclaimer" for the program, if necessary.
 # For more information on this, and how to apply and follow the GNU AGPL, see
 # <http://www.gnu.org/licenses/>.
-from plugins import TestyPluginConfig
+from testy.plugins.hooks import TestyPluginConfig, hookimpl
 
 
-class TestrailMigratorConfig(TestyPluginConfig):
-    name = 'testrail_migrator'
+class TatlinAllureUploaderConfig(TestyPluginConfig):
+    package_name = 'testrail_migrator'
     verbose_name = 'TestRail migrator'
     description = 'Migrate your data from testrail to testy'
-    version = '0.1.0'
+    version = '0.1.3'
     plugin_base_url = 'migrator'
     index_reverse_name = 'migrator-index'
+    urls_module = 'testrail_migrator.urls'
 
 
-config = TestrailMigratorConfig
+@hookimpl
+def config():
+    return TatlinAllureUploaderConfig

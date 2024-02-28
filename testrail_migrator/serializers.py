@@ -1,5 +1,5 @@
 # TestY TMS - Test Management System
-# Copyright (C) 2023 KNS Group LLC (YADRO)
+# Copyright (C) 2022 KNS Group LLC (YADRO)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published
@@ -31,8 +31,11 @@
 from rest_framework.fields import SerializerMethodField
 from rest_framework.relations import HyperlinkedIdentityField
 from rest_framework.serializers import ModelSerializer
-from tests_representation.models import Parameter, Test
-from tests_representation.selectors.results import TestResultSelector
+from testy.core.api.v1.serializers import ProjectSerializer as BaseProjectSerializer
+from testy.tests_description.api.v1.serializers import TestSuiteSerializer as BaseTestSuiteSerializer
+from testy.tests_representation.api.v1.serializers import TestPlanInputSerializer as BaseTestPlanSerializer
+from testy.tests_representation.models import Parameter, Test
+from testy.tests_representation.selectors.results import TestResultSelector
 
 
 class ParameterSerializer(ModelSerializer):
@@ -64,3 +67,18 @@ class TestSerializer(ModelSerializer):
     @staticmethod
     def get_suite(instance):
         return instance.case.suite.id
+
+
+class ProjectSerializer(BaseProjectSerializer):
+    class Meta(BaseProjectSerializer.Meta):
+        validators = []
+
+
+class TestSuiteSerializer(BaseTestSuiteSerializer):
+    class Meta(BaseTestSuiteSerializer.Meta):
+        validators = []
+
+
+class TestPlanInputSerializer(BaseTestPlanSerializer):
+    class Meta(BaseTestPlanSerializer.Meta):
+        validators = []
