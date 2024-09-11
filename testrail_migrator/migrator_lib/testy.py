@@ -48,7 +48,8 @@ from django.utils import timezone
 from testy.core.models import Attachment, Project
 from testy.tests_description.models import TestCase, TestCaseStep, TestSuite
 from testy.tests_representation.models import (Parameter, Test, TestPlan,
-                                               TestResult)
+                                               TestResult, ResultStatus)
+from testy.tests_representation.choices import ResultStatusType
 from testy.tests_representation.services.tests import TestService
 from tqdm.asyncio import tqdm
 
@@ -71,14 +72,6 @@ class ParentType(Enum):
 
 
 class TestyCreator:
-    statuses_mapping = {
-        1: 1,  # passed
-        5: 0,  # failed
-        8: 2,  # skipped
-        2: 4,  # Retest
-        3: 5,  # Untested
-        4: 6  # Not matching retest in tr / broken in testy
-    }
     markdown_endl_sep = '  \n'
 
     def __init__(self, service_login: str = 'admin',
@@ -91,6 +84,7 @@ class TestyCreator:
             logging.warning('Testy attachment url was not provided')
         self.testy_attachment_url = testy_attachment_url + '/'
         self.default_root_section_name = default_root_section_name
+        self.statuses_mapping = self.get_statuses_mapping()
 
     async def replace_testrail_attachment_url(self, text_to_check, attachments_mapping,
                                               testrail_client: TestRailClient, parent_object):
@@ -603,3 +597,15 @@ class TestyCreator:
             created_user = MigratorService.user_create(user_data)
             dst_ids.append(created_user.id)
         return dict(zip(src_ids, dst_ids))
+
+    @classmethod
+    def get_statuses_mapping(cls) -> dict[int, ResultStatus]:
+        return {
+            1: ResultStatus.objects.get(name='Passed', project=None, type=ResultStatusType.SYSTEM),  # passed
+            5: ResultStatus.objects.get(name='Failed', project=None, type=ResultStatusType.SYSTEM),  # failed
+            8: ResultStatus.objects.get(name='Skipped', project=None, type=ResultStatusType.SYSTEM),  # skipped
+            2: ResultStatus.objects.get(name='Retest', project=None, type=ResultStatusType.SYSTEM),  # Retest
+            3: ResultStatus.objects.get(name='Skipped', project=None, type=ResultStatusType.SYSTEM),  # Untested
+            # Not matching retest in tr / broken in testy
+            4: ResultStatus.objects.get(name='Retest', project=None, type=ResultStatusType.SYSTEM)
+        }

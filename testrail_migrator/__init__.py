@@ -28,14 +28,14 @@
 # if any, to sign a "copyright disclaimer" for the program, if necessary.
 # For more information on this, and how to apply and follow the GNU AGPL, see
 # <http://www.gnu.org/licenses/>.
-from testy.plugins.hooks import TestyPluginConfig, hookimpl
+from plugins.hooks import TestyPluginConfig, hookimpl
 
 
 class TatlinAllureUploaderConfig(TestyPluginConfig):
     package_name = 'testrail_migrator'
     verbose_name = 'TestRail migrator'
     description = 'Migrate your data from testrail to testy'
-    version = '0.1.3'
+    version = '0.3.0'
     plugin_base_url = 'migrator'
     index_reverse_name = 'migrator-index'
     urls_module = 'testrail_migrator.urls'
