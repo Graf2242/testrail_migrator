@@ -275,6 +275,7 @@ def upload_project_view(request):
             testrail_login = form.cleaned_data.get('testrail_login')
             testrail_password = form.cleaned_data.get('testrail_password')
             testrail_settings = form.cleaned_data['testrail_config']
+            testy_project_id = form.cleaned_data.get('testy_project_id')
 
             config_dict = {
                 'login': testrail_login,
@@ -287,7 +288,8 @@ def upload_project_view(request):
                 backup_name=backup_instance.name,
                 config_dict=config_dict,
                 testy_attachment_url=testrail_settings.testy_attachments_url,
-                upload_root_runs=upload_root_runs
+                upload_root_runs=upload_root_runs,
+                testy_project_id=testy_project_id
             )
             return redirect(reverse('plugins:testrail_migrator:task_status', kwargs={'task_id': task.task_id}))
     return render(

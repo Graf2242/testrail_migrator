@@ -79,7 +79,7 @@ def upload_task(self, backup_name, config_dict, upload_root_runs: bool, service_
             project = Project.objects.get(pk=testy_project_id)
         else:
             with progress_recorder.progress_context('Creating projects'):
-                project = MigratorService.create_project(backup['project'])
+                project = MigratorService.create_project(backup['project'], creator.service_user)
 
         with progress_recorder.progress_context('Creating users'):
             mappings['users'] = creator.create_users(backup['users'])
@@ -275,7 +275,7 @@ def download_task(self, project_id: int, config_dict: Dict, download_attachments
 
     testrail_client = TestRailClient(TestrailConfig(**config_dict))
     with progress_recorder.progress_context('Getting users'):
-        resulting_data['users'] = testrail_client.get_users()
+        resulting_data['users'] = testrail_client.get_users(project_id)
     with progress_recorder.progress_context('Getting custom fields for results '):
         resulting_data['custom_result_fields'] = testrail_client.get_custom_result_fields()
     with progress_recorder.progress_context('Getting project'):
@@ -350,7 +350,7 @@ def download_milestone_task(
     progress_recorder = ProgressRecorderContext(self, total=14, description='Download started')
     testrail_client = TestRailClient(TestrailConfig(**config_dict))
     with progress_recorder.progress_context('Getting users'):
-        resulting_data['users'] = testrail_client.get_users()
+        resulting_data['users'] = testrail_client.get_users(project_id)
     with progress_recorder.progress_context('Getting custom fields for results '):
         resulting_data['custom_result_fields'] = testrail_client.get_custom_result_fields()
     with progress_recorder.progress_context('Getting configs'):
@@ -446,10 +446,11 @@ def download_suites_task(self, project_id: int, config_dict: Dict, download_atta
     testrail_client = TestRailClient(TestrailConfig(**config_dict))
 
     with progress_recorder.progress_context('Getting users'):
-        resulting_data['users'] = testrail_client.get_users()
+        resulting_data['users'] = testrail_client.get_users(project_id)
     with progress_recorder.progress_context('Getting suites'):
         resulting_data['suites'] = testrail_client.get_suites(project_id)
-        resulting_data['suites'] = [elem for elem in resulting_data['suites'] if elem['id'] in suite_ids]
+        if suite_ids:
+            resulting_data['suites'] = [elem for elem in resulting_data['suites'] if elem['id'] in suite_ids]
     with progress_recorder.progress_context('Getting cases'):
         resulting_data['cases'] = testrail_client.get_cases(project_id, resulting_data['suites'])
     with progress_recorder.progress_context('Getting sections'):
@@ -474,7 +475,7 @@ def download_plans_runs_task(self, project_id: int, config_dict: Dict, download_
     progress_recorder = ProgressRecorderContext(self, total=11, description='Download started')
     testrail_client = TestRailClient(TestrailConfig(**config_dict))
     with progress_recorder.progress_context('Getting users'):
-        resulting_data['users'] = testrail_client.get_users()
+        resulting_data['users'] = testrail_client.get_users(project_id)
     with progress_recorder.progress_context('Getting custom fields for results '):
         resulting_data['custom_result_fields'] = testrail_client.get_custom_result_fields()
     with progress_recorder.progress_context('Getting configs'):

@@ -258,7 +258,6 @@ class TestyCreator:
             else:
                 section_data['parent'] = TestSuite.objects.get(pk=suite_mappings.get(section['suite_id']))
             sections_mappings[section['id']] = MigratorService.suite_create(section_data).id
-        TestSuite.objects.rebuild()
         return sections_mappings
 
     @staticmethod
@@ -429,7 +428,8 @@ class TestyCreator:
         for src_test, created_test in zip(src_tests, created_tests):
             if src_test['assignedto_id']:
                 user_id = user_mappings.get(src_test['assignedto_id'])
-                TestService().test_update(created_test, {'assignee': UserModel.objects.get(pk=user_id)})
+                if user_id:
+                    TestService().test_update(created_test, {'assignee': UserModel.objects.get(pk=user_id)})
 
         return dict(zip(
             [src_test['id'] for src_test in src_tests],
@@ -576,9 +576,16 @@ class TestyCreator:
 
     @staticmethod
     def create_users(users):
+        if not isinstance(users, list):
+            logging.error(f"Expected users to be a list, got {type(users).__name__}: {repr(users)[:200]}")
+            raise TypeError(f"Expected users to be a list, got {type(users).__name__}. Data preview: {repr(users)[:100]}")
+        
         dst_ids = []
         src_ids = []
         for user in users:
+            if not isinstance(user, dict):
+                logging.error(f"Expected user to be a dict, got {type(user).__name__}: {repr(user)[:100]}")
+                raise TypeError(f"Expected user to be a dict, got {type(user).__name__}")
             src_ids.append(user['id'])
             split_name = user['name'].split(' ')
             first_name = split_name[0]

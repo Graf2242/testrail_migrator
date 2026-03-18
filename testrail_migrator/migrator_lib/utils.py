@@ -47,6 +47,8 @@ def timer(function_name: str):
 
 
 def split_list_by_chunks(src_list: list, chunk_size: int = 40):
+    if not src_list:
+        return []
     return [src_list[x:x + chunk_size] for x in range(0, len(src_list), chunk_size)]
 
 

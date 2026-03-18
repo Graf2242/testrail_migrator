@@ -86,6 +86,7 @@ class MigratorUploadBaseForm(forms.Form):
 class MigratorSuiteDownloadForm(MigratorDownloadBaseForm):
     testrail_suite_ids = SimpleArrayField(
         forms.IntegerField(),
+        required=False,
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
 
@@ -108,6 +109,11 @@ class MigratorProjectUploadForm(MigratorUploadBaseForm):
     upload_root_runs = forms.BooleanField(
         required=False,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    testy_project_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        help_text='Optional. Specify if project already exists in Testy (e.g. when get_project is unavailable without Enterprise license).'
     )
 
 
