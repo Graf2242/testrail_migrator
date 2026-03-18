@@ -83,11 +83,17 @@ class TestRailClient:
 
     @async_to_sync
     async def get_users(self, project_id=''):
-        return await self._process_request(f'/get_users/{project_id}')
+        response = await self._process_request(f'/get_users/{project_id}')
+        if isinstance(response, dict) and 'users' in response:
+            return response['users']
+        return response if isinstance(response, list) else []
 
     @async_to_sync
     async def get_custom_result_fields(self):
-        return await self._process_request('/get_result_fields')
+        response = await self._process_request('/get_result_fields')
+        if isinstance(response, dict) and 'fields' in response:
+            return response['fields']
+        return response if isinstance(response, list) else []
 
     @staticmethod
     def get_runs_from_plans(plans):
@@ -101,7 +107,7 @@ class TestRailClient:
     async def get_plans_with_runs(self, project_id, query_params):
         plans_without_runs = await self.get_plans(project_id, query_params=query_params)
         plans = []
-        plan_chunks = split_list_by_chunks(plans_without_runs)
+        plan_chunks = split_list_by_chunks(plans_without_runs['plans'])
         for chunk in tqdm(plan_chunks, desc='Plans progress'):
             tasks = []
             for plan in chunk:
@@ -127,7 +133,8 @@ class TestRailClient:
     @async_to_sync
     async def get_tests_for_runs(self, runs):
         tests = []
-        run_chunks = split_list_by_chunks(runs)
+        runs_list = runs['runs'] if isinstance(runs, dict) and 'runs' in runs else runs
+        run_chunks = split_list_by_chunks(runs_list)
         for chunk in tqdm(run_chunks, desc='Getting tests for runs'):
             tasks = []
             for run in chunk:
@@ -139,7 +146,10 @@ class TestRailClient:
 
     @async_to_sync
     async def get_suites(self, project_id):
-        return await self._process_request(f'/get_suites/{project_id}')
+        response = await self._process_request(f'/get_suites/{project_id}')
+        if isinstance(response, dict) and 'suites' in response:
+            return response['suites']
+        return response if isinstance(response, list) else []
 
     @async_to_sync
     async def get_suite(self, suite_id):
@@ -150,10 +160,16 @@ class TestRailClient:
         return await self._process_request(f'/get_project/{project_id}')
 
     async def get_cases_for_suite(self, project_id, suite_id):
-        return await self._process_request(f'/get_cases/{project_id}', query_params={'suite_id': suite_id})
+        response = await self._process_request(f'/get_cases/{project_id}', query_params={'suite_id': suite_id})
+        if isinstance(response, dict) and 'cases' in response:
+            return response['cases']
+        return response if isinstance(response, list) else []
 
     async def get_sections_for_suite(self, project_id, suite_id):
-        return await self._process_request(f'/get_sections/{project_id}', query_params={'suite_id': suite_id})
+        response = await self._process_request(f'/get_sections/{project_id}', query_params={'suite_id': suite_id})
+        if isinstance(response, dict) and 'sections' in response:
+            return response['sections']
+        return response if isinstance(response, list) else []
 
     @async_to_sync
     async def get_cases(self, project_id, suites):
@@ -186,13 +202,12 @@ class TestRailClient:
     @async_to_sync
     async def get_milestones(self, project_id: int, ignore_completed: bool, query_params=None):
         milestones = await self._process_request(f'/get_milestones/{project_id}', query_params=query_params)
-        for milestone in milestones:
-            filtered_children = []
-            for child_milestone in milestone['milestones']:
-                if ignore_completed and child_milestone['is_completed']:
-                    continue
-                filtered_children.append(child_milestone)
-            milestone['milestones'] = filtered_children
+        filtered_children = []
+        for child_milestone in milestones['milestones']:
+            if ignore_completed and child_milestone['is_completed']:
+                continue
+            filtered_children.append(child_milestone)
+        milestones['milestones'] = filtered_children
         return milestones
 
     @async_to_sync
@@ -206,14 +221,20 @@ class TestRailClient:
 
     @async_to_sync
     async def get_configs(self, project_id):
-        return await self._process_request(f'/get_configs/{project_id}')
+        response = await self._process_request(f'/get_configs/{project_id}')
+        if isinstance(response, dict) and 'configs' in response:
+            return response['configs']
+        return response if isinstance(response, list) else []
 
     async def get_plans(self, project_id: int, query_params=None):
         return await self._process_request(f'/get_plans/{project_id}', query_params=query_params)
 
     @async_to_sync
     async def get_runs(self, project_id: int, query_params=None):
-        return await self._process_request(f'/get_runs/{project_id}', query_params=query_params)
+        response = await self._process_request(f'/get_runs/{project_id}', query_params=query_params)
+        if isinstance(response, dict) and 'runs' in response:
+            return response['runs']
+        return response if isinstance(response, list) else []
 
     async def get_plan(self, plan_id):
         return await self._process_request(f'/get_plan/{plan_id}')
@@ -222,10 +243,20 @@ class TestRailClient:
         return await self._process_request(f'/get_run/{run_id}')
 
     async def get_tests(self, run_id: int):
-        return await self._process_request(f'/get_tests/{run_id}')
+        response = await self._process_request(f'/get_tests/{run_id}')
+        if response is None:
+            return []
+        if isinstance(response, dict) and 'tests' in response:
+            return response['tests']
+        return response if isinstance(response, list) else []
 
     async def get_results(self, test_id: int):
-        return await self._process_request(f'/get_results/{test_id}')
+        response = await self._process_request(f'/get_results/{test_id}')
+        if response is None:
+            return []
+        if isinstance(response, dict) and 'results' in response:
+            return response['results']
+        return response if isinstance(response, list) else []
 
     async def get_attachment_with_parent_id(self, instance_id, instance_type: InstanceType):
         attachments = await self._process_request(f'/get_attachments_for_{instance_type.value}/{instance_id}')
