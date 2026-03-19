@@ -44,11 +44,11 @@ from testrail_migrator.migrator_lib.utils import split_list_by_chunks
 
 
 class InstanceType(Enum):
-    PLAN = 'plan'
-    CASE = 'case'
-    TEST = 'test'
-    RUN = 'run'
-    ENTRY = 'entry'
+    PLAN = "plan"
+    CASE = "case"
+    TEST = "test"
+    RUN = "run"
+    ENTRY = "entry"
 
 
 # TODO: вынести значение размера чанка в конфиг
@@ -77,22 +77,23 @@ class TestRailClient:
             config: instance of TestrailConfig
         """
         if not config.login or not config.password:
-            raise TestRailClientError('No login or password were provided.')
+            raise TestRailClientError("No login or password were provided.")
         self.config = config
         self.timeout = timeout
+        self.failed_suites = set()
 
     @async_to_sync
-    async def get_users(self, project_id=''):
-        response = await self._process_request(f'/get_users/{project_id}')
-        if isinstance(response, dict) and 'users' in response:
-            return response['users']
+    async def get_users(self, project_id=""):
+        response = await self._process_request(f"/get_users/{project_id}")
+        if isinstance(response, dict) and "users" in response:
+            return response["users"]
         return response if isinstance(response, list) else []
 
     @async_to_sync
     async def get_custom_result_fields(self):
-        response = await self._process_request('/get_result_fields')
-        if isinstance(response, dict) and 'fields' in response:
-            return response['fields']
+        response = await self._process_request("/get_result_fields")
+        if isinstance(response, dict) and "fields" in response:
+            return response["fields"]
         return response if isinstance(response, list) else []
 
     @staticmethod
@@ -101,40 +102,48 @@ class TestRailClient:
         if not plans:
             return runs_parent_plan
         for plan in plans:
-            if isinstance(plan, dict) and 'entries' in plan:
-                for entry in plan['entries']:
-                    if isinstance(entry, dict) and 'runs' in entry:
-                        runs_parent_plan.extend(entry['runs'])
+            if isinstance(plan, dict) and "entries" in plan:
+                for entry in plan["entries"]:
+                    if isinstance(entry, dict) and "runs" in entry:
+                        runs_parent_plan.extend(entry["runs"])
         return runs_parent_plan
 
     @async_to_sync
     async def get_plans_with_runs(self, project_id, query_params):
         plans_without_runs = await self.get_plans(project_id, query_params=query_params)
         plans = []
-        if isinstance(plans_without_runs, dict) and 'plans' in plans_without_runs:
-            plans_list = plans_without_runs['plans']
+        if isinstance(plans_without_runs, dict) and "plans" in plans_without_runs:
+            plans_list = plans_without_runs["plans"]
         else:
-            plans_list = plans_without_runs if isinstance(plans_without_runs, list) else []
-        
+            plans_list = (
+                plans_without_runs if isinstance(plans_without_runs, list) else []
+            )
+
         plan_chunks = split_list_by_chunks(plans_list)
-        for chunk in tqdm(plan_chunks, desc='Plans progress'):
+        for chunk in tqdm(plan_chunks, desc="Plans progress"):
             tasks = []
             for plan in chunk:
-                tasks.append(self.get_plan(plan['id']))
-            plans.extend(await tqdm.gather(*tasks, desc='Plans chunk progress', leave=False))
+                tasks.append(self.get_plan(plan["id"]))
+            plans.extend(
+                await tqdm.gather(*tasks, desc="Plans chunk progress", leave=False)
+            )
         return plans
 
     @async_to_sync
     async def get_results_for_tests(self, tests):
         results = []
         test_chunks = split_list_by_chunks(tests)
-        for chunk in tqdm(test_chunks, desc='Getting results for tests'):
+        for chunk in tqdm(test_chunks, desc="Getting results for tests"):
             tasks = []
             for test in chunk:
-                tasks.append(self.get_results(test['id']))
+                tasks.append(self.get_results(test["id"]))
             results.extend(
                 list(
-                    itertools.chain.from_iterable(await tqdm.gather(*tasks, desc='Results chunk progress', leave=False))
+                    itertools.chain.from_iterable(
+                        await tqdm.gather(
+                            *tasks, desc="Results chunk progress", leave=False
+                        )
+                    )
                 )
             )
         return results
@@ -142,55 +151,81 @@ class TestRailClient:
     @async_to_sync
     async def get_tests_for_runs(self, runs):
         tests = []
-        runs_list = runs['runs'] if isinstance(runs, dict) and 'runs' in runs else runs
+        runs_list = runs["runs"] if isinstance(runs, dict) and "runs" in runs else runs
         runs_list = runs_list if isinstance(runs_list, list) else []
         run_chunks = split_list_by_chunks(runs_list)
-        for chunk in tqdm(run_chunks, desc='Getting tests for runs'):
+        for chunk in tqdm(run_chunks, desc="Getting tests for runs"):
             tasks = []
             for run in chunk:
-                tasks.append(self.get_tests(run['id']))
+                tasks.append(self.get_tests(run["id"]))
             tests.extend(
-                list(itertools.chain.from_iterable(await tqdm.gather(*tasks, desc='Tests chunk progress', leave=False)))
+                list(
+                    itertools.chain.from_iterable(
+                        await tqdm.gather(
+                            *tasks, desc="Tests chunk progress", leave=False
+                        )
+                    )
+                )
             )
         return tests
 
     @async_to_sync
     async def get_suites(self, project_id):
-        response = await self._process_request(f'/get_suites/{project_id}')
-        if isinstance(response, dict) and 'suites' in response:
-            return response['suites']
+        response = await self._process_request(f"/get_suites/{project_id}")
+        if isinstance(response, dict) and "suites" in response:
+            return response["suites"]
         return response if isinstance(response, list) else []
 
     @async_to_sync
     async def get_suite(self, suite_id):
-        return await self._process_request(f'/get_suite/{suite_id}')
+        return await self._process_request(f"/get_suite/{suite_id}")
 
     @async_to_sync
     async def get_project(self, project_id):
-        return await self._process_request(f'/get_project/{project_id}')
+        return await self._process_request(f"/get_project/{project_id}")
 
     async def get_cases_for_suite(self, project_id, suite_id):
-        response = await self._process_request(f'/get_cases/{project_id}', query_params={'suite_id': suite_id})
-        if isinstance(response, dict) and 'cases' in response:
-            return response['cases']
-        return response if isinstance(response, list) else []
+        try:
+            response = await self._process_request(
+                f"/get_cases/{project_id}", query_params={"suite_id": suite_id}
+            )
+            if isinstance(response, dict) and "cases" in response:
+                return response["cases"]
+            return response if isinstance(response, list) else []
+        except Exception as e:
+            logging.error(f"Failed to fetch cases for suite {suite_id}: {e}")
+            self.failed_suites.add(suite_id)
+            return []
 
     async def get_sections_for_suite(self, project_id, suite_id):
-        response = await self._process_request(f'/get_sections/{project_id}', query_params={'suite_id': suite_id})
-        if isinstance(response, dict) and 'sections' in response:
-            return response['sections']
-        return response if isinstance(response, list) else []
+        try:
+            response = await self._process_request(
+                f"/get_sections/{project_id}", query_params={"suite_id": suite_id}
+            )
+            if isinstance(response, dict) and "sections" in response:
+                return response["sections"]
+            return response if isinstance(response, list) else []
+        except Exception as e:
+            logging.error(f"Failed to fetch sections for suite {suite_id}: {e}")
+            self.failed_suites.add(suite_id)
+            return []
 
     @async_to_sync
     async def get_cases(self, project_id, suites):
         tests = []
         suite_chunks = split_list_by_chunks(suites)
-        for chunk in tqdm(suite_chunks, desc='Getting cases for suites'):
+        for chunk in tqdm(suite_chunks, desc="Getting cases for suites"):
             tasks = []
             for suite in chunk:
-                tasks.append(self.get_cases_for_suite(project_id, suite['id']))
+                tasks.append(self.get_cases_for_suite(project_id, suite["id"]))
             tests.extend(
-                list(itertools.chain.from_iterable(await tqdm.gather(*tasks, desc='Cases chunk progress', leave=False)))
+                list(
+                    itertools.chain.from_iterable(
+                        await tqdm.gather(
+                            *tasks, desc="Cases chunk progress", leave=False
+                        )
+                    )
+                )
             )
         return tests
 
@@ -198,117 +233,145 @@ class TestRailClient:
     async def get_sections(self, project_id, suites):
         sections = []
         suite_chunks = split_list_by_chunks(suites)
-        for chunk in tqdm(suite_chunks, desc='Getting sections for suites'):
+        for chunk in tqdm(suite_chunks, desc="Getting sections for suites"):
             tasks = []
             for suite in chunk:
-                tasks.append(self.get_sections_for_suite(project_id, suite['id']))
+                tasks.append(self.get_sections_for_suite(project_id, suite["id"]))
             sections.extend(
-                list(itertools.chain.from_iterable(
-                    await tqdm.gather(*tasks, desc='Section chunk progress', leave=False))
+                list(
+                    itertools.chain.from_iterable(
+                        await tqdm.gather(
+                            *tasks, desc="Section chunk progress", leave=False
+                        )
+                    )
                 )
             )
         return sections
 
     @async_to_sync
-    async def get_milestones(self, project_id: int, ignore_completed: bool, query_params=None):
-        milestones = await self._process_request(f'/get_milestones/{project_id}', query_params=query_params)
-        if isinstance(milestones, dict) and 'milestones' in milestones:
-            milestones_list = milestones['milestones']
+    async def get_milestones(
+        self, project_id: int, ignore_completed: bool, query_params=None
+    ):
+        milestones = await self._process_request(
+            f"/get_milestones/{project_id}", query_params=query_params
+        )
+        if isinstance(milestones, dict) and "milestones" in milestones:
+            milestones_list = milestones["milestones"]
         elif isinstance(milestones, list):
             milestones_list = milestones
         else:
             return []
         if ignore_completed:
-            return [m for m in milestones_list if not m.get('is_completed')]
+            return [m for m in milestones_list if not m.get("is_completed")]
         return milestones_list
 
     @async_to_sync
     async def get_milestone(self, milestone_id: int):
         filtered_children = []
-        milestone = await self._process_request(f'/get_milestone/{milestone_id}')
+        milestone = await self._process_request(f"/get_milestone/{milestone_id}")
         if not milestone:
-            return {'milestones': []}
-        if isinstance(milestone, dict) and 'milestones' in milestone:
-            for child_milestone in milestone['milestones']:
+            return {"milestones": []}
+        if isinstance(milestone, dict) and "milestones" in milestone:
+            for child_milestone in milestone["milestones"]:
                 filtered_children.append(child_milestone)
-            milestone['milestones'] = filtered_children
+            milestone["milestones"] = filtered_children
         return milestone
 
     @async_to_sync
     async def get_configs(self, project_id):
-        response = await self._process_request(f'/get_configs/{project_id}')
-        if isinstance(response, dict) and 'configs' in response:
-            return response['configs']
+        response = await self._process_request(f"/get_configs/{project_id}")
+        if isinstance(response, dict) and "configs" in response:
+            return response["configs"]
         return response if isinstance(response, list) else []
 
     async def get_plans(self, project_id: int, query_params=None):
-        return await self._process_request(f'/get_plans/{project_id}', query_params=query_params)
+        return await self._process_request(
+            f"/get_plans/{project_id}", query_params=query_params
+        )
 
     @async_to_sync
     async def get_runs(self, project_id: int, query_params=None):
-        response = await self._process_request(f'/get_runs/{project_id}', query_params=query_params)
-        if isinstance(response, dict) and 'runs' in response:
-            return response['runs']
+        response = await self._process_request(
+            f"/get_runs/{project_id}", query_params=query_params
+        )
+        if isinstance(response, dict) and "runs" in response:
+            return response["runs"]
         return response if isinstance(response, list) else []
 
     async def get_plan(self, plan_id):
-        return await self._process_request(f'/get_plan/{plan_id}')
+        return await self._process_request(f"/get_plan/{plan_id}")
 
     async def get_run(self, run_id):
-        return await self._process_request(f'/get_run/{run_id}')
+        return await self._process_request(f"/get_run/{run_id}")
 
     async def get_tests(self, run_id: int):
-        response = await self._process_request(f'/get_tests/{run_id}')
+        response = await self._process_request(f"/get_tests/{run_id}")
         if response is None:
             return []
-        if isinstance(response, dict) and 'tests' in response:
-            return response['tests']
+        if isinstance(response, dict) and "tests" in response:
+            return response["tests"]
         return response if isinstance(response, list) else []
 
     async def get_results(self, test_id: int):
-        response = await self._process_request(f'/get_results/{test_id}')
+        response = await self._process_request(f"/get_results/{test_id}")
         if response is None:
             return []
-        if isinstance(response, dict) and 'results' in response:
-            return response['results']
+        if isinstance(response, dict) and "results" in response:
+            return response["results"]
         return response if isinstance(response, list) else []
 
-    async def get_attachment_with_parent_id(self, instance_id, instance_type: InstanceType):
-        attachments = await self._process_request(f'/get_attachments_for_{instance_type.value}/{instance_id}')
+    async def get_attachment_with_parent_id(
+        self, instance_id, instance_type: InstanceType
+    ):
+        attachments = await self._process_request(
+            f"/get_attachments_for_{instance_type.value}/{instance_id}"
+        )
         if attachments:
             for attachment in attachments:
-                attachment[f'{instance_type.value}_id'] = instance_id
+                attachment[f"{instance_type.value}_id"] = instance_id
         return attachments if attachments else []
 
     async def get_attachment_with_parent_id_for_entry(self, plan_id, entry_id):
-        attachments = await self._process_request(f'/get_attachments_for_plan_entry/{plan_id}/{entry_id}')
+        attachments = await self._process_request(
+            f"/get_attachments_for_plan_entry/{plan_id}/{entry_id}"
+        )
         if attachments:
             for attachment in attachments:
-                attachment['plan_id'] = plan_id
+                attachment["plan_id"] = plan_id
         return attachments if attachments else []
 
     @async_to_sync
-    async def get_attachments_for_instances(self, instances: list, instance_type: InstanceType):
+    async def get_attachments_for_instances(
+        self, instances: list, instance_type: InstanceType
+    ):
         attachments = []
         chunks = split_list_by_chunks(instances)
 
-        for idx, chunk in enumerate(tqdm(chunks, desc=f'{instance_type.value} attachments progress')):
+        for idx, chunk in enumerate(
+            tqdm(chunks, desc=f"{instance_type.value} attachments progress")
+        ):
             tasks = []
             if instance_type == InstanceType.ENTRY:
                 for instance in chunk:
                     tasks.append(
-                        self.get_attachment_with_parent_id_for_entry(instance['plan_id'], instance['id'])
+                        self.get_attachment_with_parent_id_for_entry(
+                            instance["plan_id"], instance["id"]
+                        )
                     )
             else:
                 for instance in chunk:
                     tasks.append(
-                        self.get_attachment_with_parent_id(instance['id'], instance_type)
+                        self.get_attachment_with_parent_id(
+                            instance["id"], instance_type
+                        )
                     )
 
             attachments.extend(
                 list(
                     itertools.chain.from_iterable(
-                        await tqdm.gather(*tasks, desc='attachments chunk progress', leave=False)
+                        await tqdm.gather(
+                            *tasks, desc="attachments chunk progress", leave=False
+                        )
                     )
                 )
             )
@@ -326,49 +389,55 @@ class TestRailClient:
             attachments.extend(await tqdm.gather(*tasks, leave=False))
         for attachment in attachments:
             if attachment:
-                logging.debug(f'skipped attachments parent_key:{parent_key}')
+                logging.debug(f"skipped attachments parent_key:{parent_key}")
                 result.update(attachment)
         return result
 
     async def get_attachment(self, attachment, parent_key, retry_count=30):
-        headers = {
-            'Content-Type': 'application/json; charset=utf-8'
-        }
-        async with aiohttp.ClientSession(auth=aiohttp.BasicAuth(self.config.login, self.config.password),
-                                         timeout=self.timeout) as session:
+        headers = {"Content-Type": "application/json; charset=utf-8"}
+        async with aiohttp.ClientSession(
+            auth=aiohttp.BasicAuth(self.config.login, self.config.password),
+            timeout=self.timeout,
+        ) as session:
             while retry_count:
                 try:
-                    async with session.get(url=self.config.api_url + f'/get_attachment/{attachment["id"]}',
-                                           headers=headers, timeout=self.timeout) as resp:
+                    async with session.get(
+                        url=self.config.api_url + f"/get_attachment/{attachment['id']}",
+                        headers=headers,
+                        timeout=self.timeout,
+                    ) as resp:
                         if resp.status == 400:
                             return
                         if resp.status != 200:
                             raise ClientConnectionError
                         return {
-                            attachment['id']: {
+                            attachment["id"]: {
                                 parent_key: attachment[parent_key],
-                                'content_type': resp.content_type,
-                                'size': attachment['size'],
-                                'charset': resp.charset,
-                                'name': attachment['name'],
-                                'field_name': 'file',
-                                'file_bytes': await resp.read(),
-                                'user_id': attachment['user_id'],
+                                "content_type": resp.content_type,
+                                "size": attachment["size"],
+                                "charset": resp.charset,
+                                "name": attachment["name"],
+                                "field_name": "file",
+                                "file_bytes": await resp.read(),
+                                "user_id": attachment["user_id"],
                             }
                         }
                 except (ClientConnectionError, asyncio.TimeoutError):
                     retry_count -= 1
 
     async def get_single_attachment(self, attachment_id, retry_count=30):
-        headers = {
-            'Content-Type': 'application/json; charset=utf-8'
-        }
-        async with aiohttp.ClientSession(auth=aiohttp.BasicAuth(self.config.login, self.config.password),
-                                         timeout=self.timeout) as session:
+        headers = {"Content-Type": "application/json; charset=utf-8"}
+        async with aiohttp.ClientSession(
+            auth=aiohttp.BasicAuth(self.config.login, self.config.password),
+            timeout=self.timeout,
+        ) as session:
             while retry_count:
                 try:
-                    async with session.get(url=self.config.api_url + f'/get_attachment/{attachment_id}',
-                                           headers=headers, timeout=self.timeout) as resp:
+                    async with session.get(
+                        url=self.config.api_url + f"/get_attachment/{attachment_id}",
+                        headers=headers,
+                        timeout=self.timeout,
+                    ) as resp:
                         if resp.status != 200:
                             logging.error(resp)
                             raise ClientConnectionError
@@ -377,46 +446,55 @@ class TestRailClient:
                     retry_count -= 1
 
     async def get_attachments_for_plan(self, plan_id: int):
-        list_of_attachments = await self._process_request(f'/get_attachments_for_plan/{plan_id}')
+        list_of_attachments = await self._process_request(
+            f"/get_attachments_for_plan/{plan_id}"
+        )
         if list_of_attachments:
             for attachment in list_of_attachments:
-                attachment['plan_id'] = plan_id
+                attachment["plan_id"] = plan_id
             return list_of_attachments
 
     async def get_attachments_for_run(self, run_id: int):
-        list_of_attachments = await self._process_request(f'/get_attachments_for_run/{run_id}')
+        list_of_attachments = await self._process_request(
+            f"/get_attachments_for_run/{run_id}"
+        )
         if list_of_attachments:
             for attachment in list_of_attachments:
-                attachment['run_id'] = run_id
+                attachment["run_id"] = run_id
             return list_of_attachments
 
     async def get_attachments_for_test(self, test_id: int):
-        list_of_attachments = await self._process_request(f'/get_attachments_for_test/{test_id}')
+        list_of_attachments = await self._process_request(
+            f"/get_attachments_for_test/{test_id}"
+        )
         if list_of_attachments:
             for attachment in list_of_attachments:
-                attachment['test_id'] = test_id
+                attachment["test_id"] = test_id
             return list_of_attachments
 
     async def _process_request(
-            self, endpoint: str,
-            headers=None,
-            query_params=None,
-            retry_count: int = 30,
-            file: bool = False
+        self,
+        endpoint: str,
+        headers=None,
+        query_params=None,
+        retry_count: int = 30,
+        file: bool = False,
     ):
         if not headers:
-            headers = {
-                'Content-Type': 'application/json; charset=utf-8'
-            }
+            headers = {"Content-Type": "application/json; charset=utf-8"}
         url = self.config.api_url + endpoint
 
         if query_params:
-            url = f'{url}&{"&".join([f"{field}={field_value}" for field, field_value in query_params.items()])}'
-        async with aiohttp.ClientSession(auth=aiohttp.BasicAuth(self.config.login, self.config.password),
-                                         timeout=self.timeout) as session:
+            url = f"{url}&{'&'.join([f'{field}={field_value}' for field, field_value in query_params.items()])}"
+        async with aiohttp.ClientSession(
+            auth=aiohttp.BasicAuth(self.config.login, self.config.password),
+            timeout=self.timeout,
+        ) as session:
             while retry_count:
                 try:
-                    async with session.get(url=url, headers=headers, timeout=self.timeout) as resp:
+                    async with session.get(
+                        url=url, headers=headers, timeout=self.timeout
+                    ) as resp:
                         if resp.status in (400, 403):
                             return b"" if file else {}
                         if resp.status != 200:
@@ -429,4 +507,6 @@ class TestRailClient:
                 except (ClientConnectionError, asyncio.TimeoutError) as err:
                     logging.error(err)
                     retry_count -= 1
-            raise ClientConnectionError(f'Failed to fetch {url} after all retries exhausted')
+            raise ClientConnectionError(
+                f"Failed to fetch {url} after all retries exhausted"
+            )
