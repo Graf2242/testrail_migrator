@@ -326,19 +326,25 @@ class TestRailClient:
         attachments = await self._process_request(
             f"/get_attachments_for_{instance_type.value}/{instance_id}"
         )
-        if attachments:
+        if isinstance(attachments, dict) and "attachments" in attachments:
+            attachments = attachments["attachments"]
+        if isinstance(attachments, list):
             for attachment in attachments:
                 attachment[f"{instance_type.value}_id"] = instance_id
-        return attachments if attachments else []
+            return attachments
+        return []
 
     async def get_attachment_with_parent_id_for_entry(self, plan_id, entry_id):
         attachments = await self._process_request(
             f"/get_attachments_for_plan_entry/{plan_id}/{entry_id}"
         )
-        if attachments:
+        if isinstance(attachments, dict) and "attachments" in attachments:
+            attachments = attachments["attachments"]
+        if isinstance(attachments, list):
             for attachment in attachments:
                 attachment["plan_id"] = plan_id
-        return attachments if attachments else []
+            return attachments
+        return []
 
     @async_to_sync
     async def get_attachments_for_instances(
@@ -449,7 +455,12 @@ class TestRailClient:
         list_of_attachments = await self._process_request(
             f"/get_attachments_for_plan/{plan_id}"
         )
-        if list_of_attachments:
+        if (
+            isinstance(list_of_attachments, dict)
+            and "attachments" in list_of_attachments
+        ):
+            list_of_attachments = list_of_attachments["attachments"]
+        if isinstance(list_of_attachments, list):
             for attachment in list_of_attachments:
                 attachment["plan_id"] = plan_id
             return list_of_attachments
@@ -458,7 +469,12 @@ class TestRailClient:
         list_of_attachments = await self._process_request(
             f"/get_attachments_for_run/{run_id}"
         )
-        if list_of_attachments:
+        if (
+            isinstance(list_of_attachments, dict)
+            and "attachments" in list_of_attachments
+        ):
+            list_of_attachments = list_of_attachments["attachments"]
+        if isinstance(list_of_attachments, list):
             for attachment in list_of_attachments:
                 attachment["run_id"] = run_id
             return list_of_attachments
@@ -467,7 +483,12 @@ class TestRailClient:
         list_of_attachments = await self._process_request(
             f"/get_attachments_for_test/{test_id}"
         )
-        if list_of_attachments:
+        if (
+            isinstance(list_of_attachments, dict)
+            and "attachments" in list_of_attachments
+        ):
+            list_of_attachments = list_of_attachments["attachments"]
+        if isinstance(list_of_attachments, list):
             for attachment in list_of_attachments:
                 attachment["test_id"] = test_id
             return list_of_attachments
